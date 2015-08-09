@@ -1,5 +1,3 @@
-apply plugin: 'com.android.application'
-
 def signingProperties = "signing.properties"
 def signingKeys = [
 	storeFile     : {x -> file(x)},
