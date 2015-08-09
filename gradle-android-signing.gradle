@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-apply plugin: 'android'
+apply plugin: 'com.android.application'
 
 File propFileRoot = file("${rootDir}/signing.properties")
 File propFileGlobal = file("${gradle.gradleUserHomeDir}/signing.properties")
