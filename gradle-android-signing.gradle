@@ -49,8 +49,8 @@ if (propFile.exists()) {
         android.signingConfigs.release.keyAlias = props['KEY_ALIAS']
         android.signingConfigs.release.keyPassword = props['KEY_PASSWORD']
     } else {
-        println 'signing.properties some property noe set'
-        logger.error 'signing.properties some property noe set'
+        println 'signing.properties some property not set'
+        logger.error 'signing.properties some property not set'
         android.buildTypes.release.signingConfig = null
     }
 }
