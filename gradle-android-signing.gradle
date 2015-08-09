@@ -1,56 +1,32 @@
-/*
- * Copyright 2013 Shi Jiyong (SHIJIYONG@HOTMAIL.COM)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 apply plugin: 'com.android.application'
 
-File propFileRoot = file("${rootDir}/signing.properties")
-File propFileGlobal = file("${gradle.gradleUserHomeDir}/signing.properties")
-def File propFile
-if(propFileRoot.exists()) {
-    println 'RootDir signing.properties exists, use this'
-    logger.info 'RootDir signing.properties exists, use this'
-    propFile = propFileRoot
-} else if(propFileGlobal.exists()){
-    println 'Global signing.properties exists, use this'
-    logger.info 'Global signing.properties exists, use this'
-    propFile = propFileGlobal;
+def signingProperties = "signing.properties"
+def signingKeys = [
+	storeFile     : {x -> file(x)},
+	storePassword : {x -> x},
+	keyAlias      : {x -> x},
+	keyPassword   : {x -> x},
+]
+
+// Find signing.properties in project root, or in $HOME/.gradle
+def f = ["${rootDir}/${signingProperties}", "${gradle.gradleUserHomeDir}/${signingProperties}"].find { file(it).exists() }
+
+if (f) {
+	logger.info "Loading signing properties from ${f}"
+	def props = new Properties()
+	props.load(new FileInputStream(f))
+
+	// For each property apply it to the release signing config
+	signingKeys.any { k, fn ->
+		if (!props.containsKey(k)) {
+			logger.error "Missing property ${k}"
+			android.buildTypes.release.signingConfig = null
+			return true
+		}
+		android.signingConfigs.release[k] = fn(props[k]);
+		return
+	}
 } else {
-    println 'signing.properties not exists in all search path'
-    logger.error 'signing.properties not exists in all search path'
-    android.buildTypes.release.signingConfig = null
-}
-
-if (propFile.exists()) {
-    def Properties props = new Properties()
-    props.load(new FileInputStream(propFile))
-
-    println 'STORE_FILE:' + props['STORE_FILE']
-    println 'STORE_PASSWORD:' + props['STORE_PASSWORD']
-    println 'KEY_ALIAS:' + props['KEY_ALIAS']
-    println 'KEY_PASSWORD:' + props['KEY_PASSWORD']
-
-    if (props.containsKey('STORE_FILE') && props.containsKey('STORE_PASSWORD') &&
-            props.containsKey('KEY_ALIAS') && props.containsKey('KEY_PASSWORD')) {
-        android.signingConfigs.release.storeFile = file(props['STORE_FILE'])
-        android.signingConfigs.release.storePassword = props['STORE_PASSWORD']
-        android.signingConfigs.release.keyAlias = props['KEY_ALIAS']
-        android.signingConfigs.release.keyPassword = props['KEY_PASSWORD']
-    } else {
-        println 'signing.properties some property not set'
-        logger.error 'signing.properties some property not set'
-        android.buildTypes.release.signingConfig = null
-    }
+	logger.info "Missing ${signingProperties} file"
+	android.buildTypes.release.signingConfig = null
 }
